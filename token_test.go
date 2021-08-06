@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,34 +11,46 @@ func TestGetTokens(t *testing.T) {
 	var tokens []NewToken
 	tokens = append(tokens,
 		NewToken{
-			Name:      "w:r",
-			TagStatus: TagOpenComplimentary,
-			Args:      "d='33'",
+			Name:           "w:r",
+			TagStatus:      TagOpenComplimentary,
+			Args:           "d='33'",
+			TokenSymbOpen:  0,
+			TokenSymbClose: 11,
 		},
 		NewToken{
-			Name:      "w:rPr",
-			TagStatus: TagOpenComplimentary,
-			Args:      "",
+			Name:           "w:rPr",
+			TagStatus:      TagOpenComplimentary,
+			Args:           "",
+			TokenSymbOpen:  12,
+			TokenSymbClose: 18,
 		},
 		NewToken{
-			Name:      "w:rPr",
-			TagStatus: TagClosingComplimentary,
-			Args:      "",
+			Name:           "w:rPr",
+			TagStatus:      TagClosingComplimentary,
+			Args:           "",
+			TokenSymbOpen:  19,
+			TokenSymbClose: 26,
 		},
 		NewToken{
-			Name:      "w:t",
-			TagStatus: TagOpenComplimentary,
-			Args:      "",
+			Name:           "w:t",
+			TagStatus:      TagOpenComplimentary,
+			Args:           "",
+			TokenSymbOpen:  27,
+			TokenSymbClose: 31,
 		},
 		NewToken{
-			Name:      "w:t",
-			TagStatus: TagClosingComplimentary,
-			Args:      "",
+			Name:           "w:t",
+			TagStatus:      TagClosingComplimentary,
+			Args:           "",
+			TokenSymbOpen:  41,
+			TokenSymbClose: 46,
 		},
 		NewToken{
-			Name:      "w:r",
-			TagStatus: TagClosingComplimentary,
-			Args:      "",
+			Name:           "w:r",
+			TagStatus:      TagClosingComplimentary,
+			Args:           "",
+			TokenSymbOpen:  47,
+			TokenSymbClose: 52,
 		})
 	parsed := getTokens(testingXML)
 	if len(parsed) <= 0 {
@@ -55,21 +66,21 @@ func TestGetTokens(t *testing.T) {
 	}
 }
 
-func TestGetFirstNodes(t *testing.T) {
-	testingXML := `
-					<div/>
-					<div></div>
-					<w:r d='33'>
-						<w:rPr>
-						</w:rPr>
-						<w:t>
-							This is a
-						</w:t>
-					</w:r>`
-	tokens := getTokens(testingXML)
-	fmt.Println(getFirstNodes(tokens))
+// func TestGetFirstNodes(t *testing.T) {
+// 	testingXML := `
+// 					<div/>
+// 					<div></div>
+// 					<w:r d='33'>
+// 						<w:rPr>
+// 						</w:rPr>
+// 						<w:t>
+// 							This is a
+// 						</w:t>
+// 					</w:r>`
+// 	tokens := getTokens(testingXML)
+// 	fmt.Println(getFirstNodes(tokens))
 
-}
+// }
 func TestGetParentNodes(t *testing.T) {
 	testingXML := `
 					<div/>
