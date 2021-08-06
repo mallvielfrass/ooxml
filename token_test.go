@@ -51,12 +51,10 @@ func TestGetTokens(t *testing.T) {
 		return
 	}
 	for i, item := range parsed {
-		if item.Name != tokens[i].Name || item.Args != tokens[i].Args {
-			t.Errorf("Expected '%v', got '%v'", tokens[0], item)
-		}
+		assert.Equal(t, item, tokens[i], "they should be equal")
 	}
-
 }
+
 func TestGetFirstNodes(t *testing.T) {
 	testingXML := `
 					<div/>
