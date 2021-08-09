@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,9 +82,9 @@ func TestGetTokens(t *testing.T) {
 // 	fmt.Println(getFirstNodes(tokens))
 
 // }
-func TestGetParentNodes(t *testing.T) {
+func TestGetParentNodesT(t *testing.T) {
 	testingXML := `
-					<div/>
+	<div/>
 					<div></div>
 					<w:r d='33'>
 						<w:rPr>
@@ -120,9 +121,86 @@ func TestGetParentNodes(t *testing.T) {
 			Args:      "d='33'",
 		},
 	)
-	nodes := getParentNodes(testingXML)
+	nodes, err := getParentNodes(testingXML)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if len(nodes) <= 0 {
+		t.Error("Expected nodes")
+		return
+	}
+	if len(nodes) != len(tokens) {
+		t.Error("wrong array size")
+		return
+	}
+	//fmt.Println(nodes[0])
 	for i, item := range nodes {
 		assert.Equal(t, item, tokens[i], "they should be equal")
 	}
 
+}
+func TestGetParentNodesBrokenCases(t *testing.T) {
+	testXML := []string{
+		"",
+		"<div</div>",
+		"<zzz></w:rPr><w:t>This is a</w:t>",
+		"<w:rPr/></w:rPr><w:t>This is a<w:t>",
+		"<div>",
+		"div",
+		`<elm1 attr="value"> text </elm1> <elm2 attr="value" attr="value">text</root>`,
+		"</div><div><div><div><div>",
+	}
+	for _, item := range testXML {
+		//	fmt.Println("range")
+		nodes, err := getParentNodes(item)
+		if len(nodes) != 0 {
+			t.Errorf("node size expected 0, but %d in test [%s] ", len(nodes), item)
+			fmt.Println(nodes)
+			if err != nil {
+				fmt.Printf("err: %s\n", err.Error())
+			}
+			return
+		}
+		if err == nil {
+			t.Errorf("must be err [%v]", item)
+			return
+		}
+	}
+
+}
+func TestParseRPR(t *testing.T) {
+	xml := `<w:rPr>
+                    <w:b/>
+                    <w:b/>
+                    <w:bCs/>
+                    <w:i/>
+                    <w:i/>
+                    <w:iCs/>
+                    <w:color w:val="F10D0C"/>
+                    <w:sz w:val="36"/>
+                    <w:szCs w:val="36"/>
+                    <w:u w:val="single"/>
+                </w:rPr>`
+	expected := Font{
+		FontSize: 36,
+		//FontName: ,
+		Bold:      true,
+		Italic:    true,
+		Color:     "F10D0C",
+		Underline: "single",
+		Another:   nil,
+	}
+	nodes, err := getParentNodes(xml)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	//fmt.Println(nodes[0].Body)
+	rpr, err := ParseRPR(nodes[0].Body)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	assert.Equal(t, expected, rpr)
 }

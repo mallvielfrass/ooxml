@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 type NewToken struct {
 	Name           string
@@ -90,22 +94,27 @@ func getTokens(d string) []NewToken {
 	return Tokens
 }
 
-func getFirstNodes(tokens []NewToken) []NewToken {
-	//	fmt.Printf("debug run %v\n", tokens)
+func getFirstNodes(tokens []NewToken) ([]NewToken, error) {
+	//fmt.Printf("debug run %v\n", tokens)
 	if len(tokens) == 0 {
-		return []NewToken{}
+		return []NewToken{}, fmt.Errorf("null tokens")
 	}
 	token := tokens[0]
 	if len(tokens) == 1 {
-		return []NewToken{token}
+		return []NewToken{token}, nil
 	}
 	if token.TagStatus == TagSelfClosed {
 		var f []NewToken
 		f = append(f, token)
-		another := getFirstNodes(tokens[1:])
+		//	fmt.Printf("runnest [%d]\n", len(tokens[1:]))
+		another, err := getFirstNodes(tokens[1:])
+		if err != nil {
+			return []NewToken{}, err
+		}
 		f = append(f, another...)
-		return f
+		return f, nil
 	}
+	tokenStatus := Creating
 	iter := 0
 	var tk []NewToken
 	for i := 1; i < len(tokens); i++ {
@@ -122,20 +131,31 @@ func getFirstNodes(tokens []NewToken) []NewToken {
 					iter -= 1
 				} else {
 					//				fmt.Printf("tag %s closed\n", token.Name)
+					tokenStatus = Empty
 					tk = append(tk, token, let)
 					if len(tokens) <= i {
-						return tk
+						return tk, nil
 					}
 					//				fmt.Printf("another\n")
-					another := getFirstNodes(tokens[i+1:])
-					tk = append(tk, another...)
-					return tk
+					//	fmt.Printf("another runnest [%d]\n", len(tokens[i+1:]))
+					if len(tokens[i+1:]) != 0 {
+						another, err := getFirstNodes(tokens[i+1:])
+						if err != nil {
+							return nil, err
+						}
+						tk = append(tk, another...)
+						return tk, nil
+					}
+					return tk, nil
 				}
 
 			}
 		}
 	}
-	return []NewToken{}
+	if tokenStatus != Empty {
+		return []NewToken{}, fmt.Errorf("tag [%v] wasn't closed", token)
+	}
+	return []NewToken{}, nil
 }
 
 type EmbeddedToken struct {
@@ -145,13 +165,22 @@ type EmbeddedToken struct {
 	Args      string
 }
 
-func getParentNodes(d string) []EmbeddedToken {
+func getParentNodes(d string) ([]EmbeddedToken, error) {
+	if len(d) == 0 {
+		return nil, fmt.Errorf("len 'xml string' == 0")
+	}
 	tokens := getTokens(d)
-	items := getFirstNodes(tokens)
+	//	fmt.Printf("tokens [%v]\n", tokens)
+	items, err := getFirstNodes(tokens)
+	if err != nil {
+		return nil, err
+	}
 	var env NewToken
 	envStatus := Empty
 	var eTokens []EmbeddedToken
+	//fmt.Printf("len items [%d] items[%v] d[%s]\n", len(items), items, d)
 	for _, item := range items {
+		//	fmt.Printf("item: %v\n", item)
 		if item.TagStatus == TagSelfClosed {
 			eTokens = append(eTokens, EmbeddedToken{
 				Name:      item.Name,
@@ -165,12 +194,13 @@ func getParentNodes(d string) []EmbeddedToken {
 				envStatus = Creating
 				env = item
 			} else {
-				fmt.Printf("error adding element %v\n", item)
-				break
+				//	fmt.Printf("error adding element %v\n", item)
+				return nil, fmt.Errorf("error adding element %v", item)
 			}
 		}
 		if item.TagStatus == TagClosingComplimentary {
 			if envStatus == Creating {
+				//		fmt.Printf("creating\n")
 				eTokens = append(eTokens, EmbeddedToken{
 					Name:      item.Name,
 					TagStatus: TagComplimentary,
@@ -181,10 +211,68 @@ func getParentNodes(d string) []EmbeddedToken {
 				envStatus = Empty
 				env = NewToken{}
 			} else {
-				fmt.Printf("error adding element %v\n", item)
-				break
+				return nil, fmt.Errorf("error adding element %v", item)
 			}
 		}
 	}
-	return eTokens
+	if envStatus != Empty {
+		return nil, fmt.Errorf("broken xml.tag [%s] not closed", env.Name)
+	}
+	return eTokens, nil
+}
+
+type Font struct {
+	FontSize           int // <w:sz w:val="36"/>& <w:szCs w:val="36"/>
+	FontName           string
+	Bold               bool //<w:b/> <w:bCs/>
+	Italic             bool // <w:i/> <w:iCs/>
+	Strike             bool
+	Color              string //<w:color w:val="F10D0C"/>
+	Underline          string //<w:u w:val="single"/> non or single or double
+	Another            []EmbeddedToken
+	AnotherFontTagAttr []string
+}
+
+func getWVal(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	z := strings.Split(s, "w:val=")
+	if 2 <= len(z) {
+		size := strings.Split(z[1], "\"")[1]
+		//fmt.Printf("size: %s\n", size)
+		return size
+	}
+	return ""
+}
+func ParseRPR(xml string) (Font, error) {
+	nodes, err := getParentNodes(xml)
+	if err != nil {
+		return Font{}, err
+	}
+	var rpr Font
+	for _, item := range nodes {
+		//	fmt.Printf("item: %s\n", item.Name)
+		switch item.Name {
+		case "w:b", "w:bCs":
+			rpr.Bold = true
+
+		case "w:i", "w:iCs":
+			rpr.Italic = true
+
+		case "w:sz", "w:szCs":
+			z, err := strconv.Atoi(getWVal(item.Args))
+			if err != nil {
+				return Font{}, fmt.Errorf("error parsing node [%v]. error [%s]", item, err)
+			}
+			rpr.FontSize = z
+		case "w:u":
+			rpr.Underline = getWVal(item.Args)
+		case "w:color":
+			rpr.Color = getWVal(item.Args)
+		default:
+			rpr.Another = append(rpr.Another, item)
+		}
+	}
+	return rpr, nil
 }

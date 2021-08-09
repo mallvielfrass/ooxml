@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/mallvielfrass/fmc"
 )
 
@@ -15,7 +17,11 @@ func main() {
 							This is a
 						</w:t>
 					</w:r>`
-	nodes := getParentNodes(testingXML)
+	nodes, err := getParentNodes(testingXML)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	for i, item := range nodes {
 		fmc.Printfln("#gbt%d) #ybt%s", i+1, item.Name)
 	}
