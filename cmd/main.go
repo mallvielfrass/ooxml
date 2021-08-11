@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mallvielfrass/fmc"
+	"github.com/mallvielfrass/ooxml"
 )
 
 func main() {
@@ -17,7 +18,8 @@ func main() {
 							This is a
 						</w:t>
 					</w:r>`
-	nodes, err := getParentNodes(testingXML)
+
+	nodes, err := ooxml.GetParentNodes(testingXML)
 	if err != nil {
 		fmt.Println(err)
 		return

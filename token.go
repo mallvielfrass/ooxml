@@ -1,4 +1,4 @@
-package main
+package ooxml
 
 import (
 	"fmt"
@@ -165,7 +165,7 @@ type EmbeddedToken struct {
 	Args      string
 }
 
-func getParentNodes(d string) ([]EmbeddedToken, error) {
+func GetParentNodes(d string) ([]EmbeddedToken, error) {
 	if len(d) == 0 {
 		return nil, fmt.Errorf("len 'xml string' == 0")
 	}
@@ -233,7 +233,7 @@ type Font struct {
 	AnotherFontTagAttr []string
 }
 
-func getWVal(s string) string {
+func GetWVal(s string) string {
 	if len(s) == 0 {
 		return ""
 	}
@@ -246,7 +246,7 @@ func getWVal(s string) string {
 	return ""
 }
 func ParseRPR(xml string) (Font, error) {
-	nodes, err := getParentNodes(xml)
+	nodes, err := GetParentNodes(xml)
 	if err != nil {
 		return Font{}, err
 	}
@@ -261,15 +261,15 @@ func ParseRPR(xml string) (Font, error) {
 			rpr.Italic = true
 
 		case "w:sz", "w:szCs":
-			z, err := strconv.Atoi(getWVal(item.Args))
+			z, err := strconv.Atoi(GetWVal(item.Args))
 			if err != nil {
 				return Font{}, fmt.Errorf("error parsing node [%v]. error [%s]", item, err)
 			}
 			rpr.FontSize = z
 		case "w:u":
-			rpr.Underline = getWVal(item.Args)
+			rpr.Underline = GetWVal(item.Args)
 		case "w:color":
-			rpr.Color = getWVal(item.Args)
+			rpr.Color = GetWVal(item.Args)
 		default:
 			rpr.Another = append(rpr.Another, item)
 		}

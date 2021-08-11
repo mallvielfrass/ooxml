@@ -1,4 +1,4 @@
-package main
+package ooxml
 
 import (
 	"fmt"
@@ -121,7 +121,7 @@ func TestGetParentNodesT(t *testing.T) {
 			Args:      "d='33'",
 		},
 	)
-	nodes, err := getParentNodes(testingXML)
+	nodes, err := GetParentNodes(testingXML)
 	if err != nil {
 		t.Error(err)
 		return
@@ -153,7 +153,7 @@ func TestGetParentNodesBrokenCases(t *testing.T) {
 	}
 	for _, item := range testXML {
 		//	fmt.Println("range")
-		nodes, err := getParentNodes(item)
+		nodes, err := GetParentNodes(item)
 		if len(nodes) != 0 {
 			t.Errorf("node size expected 0, but %d in test [%s] ", len(nodes), item)
 			fmt.Println(nodes)
@@ -191,7 +191,7 @@ func TestParseRPR(t *testing.T) {
 		Underline: "single",
 		Another:   nil,
 	}
-	nodes, err := getParentNodes(xml)
+	nodes, err := GetParentNodes(xml)
 	if err != nil {
 		t.Error(err)
 		return

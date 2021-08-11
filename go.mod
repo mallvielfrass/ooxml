@@ -1,4 +1,4 @@
-module main
+module github.com/mallvielfrass/ooxml
 
 go 1.16
 
