@@ -76,7 +76,12 @@ func getTokens(d string) []NewToken {
 		case "\\":
 		case " ":
 			if tokenStatus {
-				ArgStatus = Creating
+				if ArgStatus == Creating {
+					arg += " "
+				} else {
+					ArgStatus = Creating
+				}
+
 			}
 		case "\t":
 		case "\n":
